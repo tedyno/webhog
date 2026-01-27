@@ -46,9 +46,8 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Catch-all webhook handler - any path that doesn't start with underscore
+	// Catch-all webhook handler
 	http.HandleFunc("/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		// Skip internal routes
 		if strings.HasPrefix(r.URL.Path, "/_") {
 			http.NotFound(w, r)
 			return

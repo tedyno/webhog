@@ -3,19 +3,27 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { WebhookRequest } from "@/types/request";
 
-const WS_URL = "ws://localhost:8080/_ws";
-const API_URL = "http://localhost:8080/_api/requests";
-
 export function useWebSocket() {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [apiUrl, setApiUrl] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch config on mount
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((config) => setApiUrl(config.apiUrl))
+      .catch(() => setApiUrl("http://localhost:8080"));
+  }, []);
+
   const connect = useCallback(() => {
+    if (!apiUrl) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const ws = new WebSocket(WS_URL);
+    const wsUrl = apiUrl.replace(/^http/, "ws") + "/_ws";
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       setIsConnected(true);
@@ -42,11 +50,12 @@ export function useWebSocket() {
     };
 
     wsRef.current = ws;
-  }, []);
+  }, [apiUrl]);
 
   const fetchHistory = useCallback(async () => {
+    if (!apiUrl) return;
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(`${apiUrl}/_api/requests`);
       if (response.ok) {
         const data: WebhookRequest[] = await response.json();
         setRequests(data);
@@ -54,22 +63,25 @@ export function useWebSocket() {
     } catch (err) {
       console.error("Failed to fetch history:", err);
     }
-  }, []);
+  }, [apiUrl]);
 
   const clearRequests = useCallback(async () => {
+    if (!apiUrl) return;
     try {
-      const response = await fetch(`${API_URL}/clear`, { method: "POST" });
+      const response = await fetch(`${apiUrl}/_api/requests/clear`, { method: "POST" });
       if (response.ok) {
         setRequests([]);
       }
     } catch (err) {
       console.error("Failed to clear requests:", err);
     }
-  }, []);
+  }, [apiUrl]);
 
   useEffect(() => {
-    fetchHistory();
-    connect();
+    if (apiUrl) {
+      fetchHistory();
+      connect();
+    }
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -79,7 +91,7 @@ export function useWebSocket() {
         wsRef.current.close();
       }
     };
-  }, [connect, fetchHistory]);
+  }, [apiUrl, connect, fetchHistory]);
 
-  return { requests, isConnected, clearRequests };
+  return { requests, isConnected, clearRequests, apiUrl };
 }
