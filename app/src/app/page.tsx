@@ -7,10 +7,15 @@ import { RequestDetail } from "@/components/RequestDetail";
 import { WebhookRequest } from "@/types/request";
 
 export default function Home() {
-  const { requests, isConnected, clearRequests } = useWebSocket();
+  const { requests, isConnected, clearRequests, apiUrl } = useWebSocket();
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(
     null
   );
+
+  const handleClear = async () => {
+    await clearRequests();
+    setSelectedRequest(null);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white text-black font-mono">
@@ -40,7 +45,7 @@ export default function Home() {
             [{requests.length}]
           </span>
           <button
-            onClick={clearRequests}
+            onClick={handleClear}
             className="px-4 py-2 bg-red-600 text-white font-bold uppercase text-sm hover:bg-red-700 border-2 border-black transition-none"
           >
             CLEAR
@@ -67,7 +72,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="px-4 py-2 border-t-4 border-black text-xs uppercase bg-yellow-300 font-bold">
-        ENDPOINT: http://localhost:8080/*
+        ENDPOINT: {apiUrl || "..."}/*
       </footer>
     </div>
   );
