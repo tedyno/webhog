@@ -33,15 +33,10 @@ func main() {
 
 	// Internal routes (prefixed with underscore)
 	http.HandleFunc("/_ws", hub.HandleWebSocket)
-	http.HandleFunc("/_api/requests", corsMiddleware(webhookHandler.HandleGetRequests))
-	http.HandleFunc("/_api/requests/clear", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" || r.Method == "DELETE" {
-			webhookHandler.HandleClearRequests(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	}))
-	http.HandleFunc("/_health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /_api/requests", corsMiddleware(webhookHandler.HandleGetRequests))
+	http.HandleFunc("POST /_api/requests/clear", corsMiddleware(webhookHandler.HandleClearRequests))
+	http.HandleFunc("DELETE /_api/requests/clear", corsMiddleware(webhookHandler.HandleClearRequests))
+	http.HandleFunc("GET /_health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
