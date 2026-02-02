@@ -1,5 +1,5 @@
 # Stage 1: Build Go API
-FROM golang:1.21-alpine AS api-builder
+FROM golang:1.25-alpine AS api-builder
 
 WORKDIR /build
 
