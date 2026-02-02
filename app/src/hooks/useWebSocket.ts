@@ -2,24 +2,16 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { WebhookRequest } from "@/types/request";
+import { useApiContext } from "@/contexts/ApiContext";
 
 export function useWebSocket() {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [apiUrl, setApiUrl] = useState<string | null>(null);
+  const { apiUrl, isLoaded } = useApiContext();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch config on mount
-  useEffect(() => {
-    fetch("/api/config")
-      .then((res) => res.json())
-      .then((config) => setApiUrl(config.apiUrl))
-      .catch(() => setApiUrl("http://localhost:8080"));
-  }, []);
-
   const connect = useCallback(() => {
-    if (!apiUrl) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const wsUrl = apiUrl.replace(/^http/, "ws") + "/_ws";
@@ -53,7 +45,6 @@ export function useWebSocket() {
   }, [apiUrl]);
 
   const fetchHistory = useCallback(async () => {
-    if (!apiUrl) return;
     try {
       const response = await fetch(`${apiUrl}/_api/requests`);
       if (response.ok) {
@@ -66,7 +57,6 @@ export function useWebSocket() {
   }, [apiUrl]);
 
   const clearRequests = useCallback(async () => {
-    if (!apiUrl) return;
     try {
       const response = await fetch(`${apiUrl}/_api/requests/clear`, { method: "POST" });
       if (response.ok) {
@@ -78,10 +68,10 @@ export function useWebSocket() {
   }, [apiUrl]);
 
   useEffect(() => {
-    if (apiUrl) {
-      fetchHistory();
-      connect();
-    }
+    if (!isLoaded) return;
+
+    fetchHistory();
+    connect();
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -91,7 +81,7 @@ export function useWebSocket() {
         wsRef.current.close();
       }
     };
-  }, [apiUrl, connect, fetchHistory]);
+  }, [isLoaded, connect, fetchHistory]);
 
-  return { requests, isConnected, clearRequests, apiUrl };
+  return { requests, isConnected, clearRequests };
 }

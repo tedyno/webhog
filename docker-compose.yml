@@ -1,5 +1,6 @@
 services:
   webhog:
+    image: tedyno/webhog
     build: .
     ports:
       - "8081:8080"

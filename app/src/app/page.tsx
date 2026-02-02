@@ -5,9 +5,11 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { RequestList } from "@/components/RequestList";
 import { RequestDetail } from "@/components/RequestDetail";
 import { WebhookRequest } from "@/types/request";
+import { useApiUrl } from "@/contexts/ApiContext";
 
 export default function Home() {
-  const { requests, isConnected, clearRequests, apiUrl } = useWebSocket();
+  const { requests, isConnected, clearRequests } = useWebSocket();
+  const apiUrl = useApiUrl();
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(
     null
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WebhookRequest, WebhookFile } from "@/types/request";
+import { useApiUrl } from "@/contexts/ApiContext";
 
 interface RequestDetailProps {
   request: WebhookRequest | null;
@@ -33,6 +34,7 @@ const isImageType = (contentType: string): boolean => {
 
 export function RequestDetail({ request }: RequestDetailProps) {
   const [copiedCurl, setCopiedCurl] = useState(false);
+  const apiUrl = useApiUrl();
 
   if (!request) {
     return (
@@ -213,9 +215,8 @@ export function RequestDetail({ request }: RequestDetailProps) {
       .flatMap(([key, values]) => values.map((v) => `${key}=${v}`))
       .join("&");
 
-    const url = `http://localhost:8080${request.path}${
-      queryString ? "?" + queryString : ""
-    }`;
+    const baseUrl = apiUrl;
+    const url = `${baseUrl}${request.path}${queryString ? "?" + queryString : ""}`;
 
     if (isMultipart) {
       // Multipart form data with files
