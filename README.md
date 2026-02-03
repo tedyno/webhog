@@ -40,6 +40,78 @@ cd app && npm install && npm run dev
 - **Frontend**: http://localhost:3000
 - **Inspect endpoint**: http://localhost:8080/*
 
+## Integration with Your Project
+
+Webhog is designed for local testing of outgoing HTTP requests. Add it to your existing project's `docker-compose.yml` to inspect requests your application sends to external services.
+
+### Docker Compose Snippet
+
+```yaml
+services:
+  # ... your existing services ...
+
+  webhog:
+    image: tedyno/webhog
+    ports:
+      - "8081:8080"
+      - "3001:3000"
+    environment:
+      - API_URL=http://localhost:8081
+```
+
+Then point your application's HTTP requests to `http://webhog:8080` (from within Docker network) or `http://localhost:8081` (from host machine).
+
+### API_URL Environment Variable
+
+The `API_URL` variable tells the frontend where to connect for WebSocket and API calls.
+
+**When you need it:**
+- When remapping ports (e.g., `8081:8080` instead of `8080:8080`)
+- When running behind a reverse proxy
+- When the external URL differs from the internal container port
+
+```yaml
+# Ports remapped - API_URL required
+ports:
+  - "8081:8080"    # API exposed on 8081
+  - "3001:3000"    # Frontend exposed on 3001
+environment:
+  - API_URL=http://localhost:8081
+```
+
+**When you don't need it:**
+- When using default ports without remapping
+- When running standalone (not integrated into another project)
+
+```yaml
+# Default ports - no API_URL needed
+ports:
+  - "8080:8080"
+  - "3000:3000"
+# No environment section required
+```
+
+### Example: Testing Webhooks
+
+Configure your application to send webhooks to webhog instead of the real endpoint:
+
+```yaml
+services:
+  myapp:
+    environment:
+      - WEBHOOK_URL=http://webhog:8080/webhook
+
+  webhog:
+    image: tedyno/webhog
+    ports:
+      - "8081:8080"
+      - "3001:3000"
+    environment:
+      - API_URL=http://localhost:8081
+```
+
+Open `http://localhost:3001` in your browser to see all requests your app sends.
+
 ## Usage
 
 Send any HTTP request to `http://localhost:8080/<any-path>`:
